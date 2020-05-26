@@ -13,14 +13,21 @@ class FireMonkey extends Command {
     const directoryLocation = path.resolve(directory)
     const files = fs.readdirSync(directoryLocation)
 
+    console.log(`🐒 About to create ${createdFiles} files, delete ${deletedFiles} files and rename ${renamedFiles} files in ${directoryLocation} with extension${extensions.length > 1 ? 's' : ''} ${extensions}.`)
+
     for (let i = 0; i < deletedFiles; i++) {
       const fileName = popRandom(files)
+
+      if (!fileName) break
 
       fs.unlinkSync(path.join(directoryLocation, fileName))
     }
 
     for (let i = 0; i < renamedFiles; i++) {
       const fileName = popRandom(files)
+
+      if (!fileName) break
+
       const nextFileName = createFileName(pickRandom(extensions))
 
       files.push(nextFileName)
