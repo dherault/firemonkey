@@ -8,23 +8,53 @@ const { Command, flags } = require('@oclif/command')
 
 class FireMonkey extends Command {
   async run() {
-    const { directory, extensions, additions, modifications, deletions, createdFiles, deletedFiles, renamedFiles } = this.parse(FireMonkey).flags
+    const { directory, extensions, createdFiles, deletedFiles, renamedFiles } = this.parse(FireMonkey).flags
 
     const directoryLocation = path.resolve(directory)
     const files = fs.readdirSync(directoryLocation)
 
-    if (createdFiles > additions) {
-      console.error('createdFiles > additions')
+    for (let i = 0; i < deletedFiles; i++) {
+      const fileName = popRandom(files)
 
-      process.exit(1)
+      fs.unlinkSync(path.join(directoryLocation, fileName))
+    }
+
+    for (let i = 0; i < renamedFiles; i++) {
+      const fileName = popRandom(files)
+      const nextFileName = createFileName(pickRandom(extensions))
+
+      files.push(nextFileName)
+
+      fs.renameSync(path.join(directoryLocation, fileName), path.join(directoryLocation, nextFileName))
     }
 
     for (let i = 0; i < createdFiles; i++) {
-      const extension = pickRandom(extensions)
-      const fileName = `${uuid.v4()}.${extension}`
+      const fileName = createFileName(pickRandom(extensions))
 
-      fs.writeFileSync(path.join(directoryLocation, fileName), createLine(), 'utf8')
+      files.push(fileName)
+
+      fs.writeFileSync(path.join(directoryLocation, fileName), '', 'utf-8')
     }
+
+    files.forEach(file => {
+      const filePath = path.join(directoryLocation, file)
+      const contentArray = fs.readFileSync(filePath, 'utf-8').split('\n')
+
+      const nDeletions = randomInteger(1, contentArray.length - 1)
+      const nAddition = randomInteger(1, 500)
+
+      for (let i = 0; i < nDeletions; i++) {
+        contentArray.splice(randomInteger(0, contentArray.length - 1), 1)
+      }
+
+      for (let i = 0; i < nAddition; i++) {
+        contentArray.splice(randomInteger(0, contentArray.length - 1), 0, createLine())
+      }
+
+      fs.writeFileSync(filePath, contentArray.join('\n'), 'utf-8')
+    })
+
+    console.log('🐒 Done!')
   }
 }
 
@@ -42,28 +72,13 @@ FireMonkey.flags = {
     multiple: true,
     default: ['txt'],
   }),
-  additions: flags.integer({
-    char: 'a',
-    description: 'Number of additions to create',
-    default: 1,
-  }),
-  modifications: flags.integer({
-    char: 'm',
-    description: 'Number of modifications to create',
-    default: 0,
-  }),
-  deletions: flags.integer({
-    char: 'd',
-    description: 'Number of deletions to create',
-    default: 0,
-  }),
   createdFiles: flags.integer({
     char: 'c',
     description: 'Number of files to create',
     default: 1,
   }),
   deletedFiles: flags.integer({
-    char: 's',
+    char: 'd',
     description: 'Number of files to delete',
     default: 0,
   }),
@@ -78,12 +93,21 @@ FireMonkey.run()
 .catch(require('@oclif/errors/handle'))
 
 function randomInteger(min, max) {
-  return
+  return Math.floor(Math.random() * (max - min) + min)
 }
+
 function pickRandom(array) {
   return array[Math.floor(Math.random() * array.length)]
 }
 
+function popRandom(array) {
+  return array.splice(Math.random() * array.length, 1)[0]
+}
+
 function createLine() {
-  return faker.random.words()
+  return faker.random.words(randomInteger(6, 36))
+}
+
+function createFileName(extension) {
+  return `${uuid.v4()}.${extension}`
 }

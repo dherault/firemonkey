@@ -1,0 +1,7 @@
+{
+  "extends": "dherault",
+  "rules": {
+    "no-restricted-syntax": "off",
+    "no-console": "off"
+  }
+}
